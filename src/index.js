@@ -113,7 +113,6 @@ app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
   return response.status(201).send()
 })
 
-
 // EXTRATO POR DATA (formato: 2023-12-05)
 app.get('/statement/date', verifyIfExistsAccountCPF, (request, response) => {
   // recuperando o customer do middleware
@@ -139,10 +138,28 @@ app.put('/account', verifyIfExistsAccountCPF, (request, response) => {
 })
 
 // OBTENDO DADOS DA CONTA
-app.get("/account", verifyIfExistsAccountCPF, (request, response) => {
+app.get('/account', verifyIfExistsAccountCPF, (request, response) => {
   const { customer } = request
 
   return response.json(customer)
+})
+
+// DELETANDO UMA CONTA
+app.delete('/account',verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request
+
+  customers.splice(customer, 1)
+
+
+  return response.status(200).json(customers)
+})
+
+app.get('/balance', verifyIfExistsAccountCPF, (request, response) => {
+  const {customer} = request
+
+  const balance = getBalance(customer.statement)
+
+  return response.json(balance)
 })
 
 app.listen(PORT)
