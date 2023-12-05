@@ -27,9 +27,9 @@ function verifyIfExistsAccountCPF(request, response, next) {
   return next()
 }
 
-function getBalance(statement){
+function getBalance(statement) {
   const balance = statement.reduce((acc, operation) => {
-    if(operation.type === 'credit'){
+    if (operation.type === 'credit') {
       return acc + operation.amount
     } else {
       return acc - operation.amount
@@ -40,7 +40,7 @@ function getBalance(statement){
   return balance
 }
 
-
+// CRIAÇÃO DE CONTA
 app.post('/signup', (request, response) => {
   const { cpf, name } = request.body
 
@@ -63,14 +63,15 @@ app.post('/signup', (request, response) => {
   return response.status(201).send()
 })
 
-
-app.get('/statement/', verifyIfExistsAccountCPF, (request, response) => {
+// EXTRATO
+app.get('/statement', verifyIfExistsAccountCPF, (request, response) => {
   // recuperando o customer do middleware
   const { customer } = request
 
   return response.json(customer.statement)
 })
 
+// DEPÓSITO
 app.post('/deposit', verifyIfExistsAccountCPF, (request, response) => {
   const { description, amount } = request.body
 
@@ -79,16 +80,16 @@ app.post('/deposit', verifyIfExistsAccountCPF, (request, response) => {
   const statementOperation = {
     description,
     amount,
-    created_at: new Date(), 
+    created_at: new Date(),
     type: "credit"
-  }  
+  }
 
   customer.statement.push(statementOperation)
 
   return response.status(201).send()
 })
 
-
+// SAQUE
 app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
   const { amount } = request.body
 
@@ -97,19 +98,33 @@ app.post('/withdraw', verifyIfExistsAccountCPF, (request, response) => {
 
   const balance = getBalance(customer.statement)
 
-  if(balance < amount){
-    return response.status(400).json({error: "Insufficient funds!"})
+  if (balance < amount) {
+    return response.status(400).json({ error: "Insufficient funds!" })
   }
 
   const statementOperation = {
     amount,
-    created_at: new Date(), 
+    created_at: new Date(),
     type: "debit"
-  } 
+  }
 
   customer.statement.push(statementOperation)
 
   return response.status(201).send()
+})
+
+
+// EXTRATO POR DATA (formato: 2023-12-05)
+app.get('/statement/date', verifyIfExistsAccountCPF, (request, response) => {
+  // recuperando o customer do middleware
+  const { customer } = request
+  const { date } = request.query
+
+  const dateFormat = new Date(date + " 00:00")
+
+  const statement = customer.statement.filter((statement) => statement.created_at.toDateString() === new Date(dateFormat).toDateString())
+
+  return response.json(statement)
 })
 
 app.listen(PORT)
